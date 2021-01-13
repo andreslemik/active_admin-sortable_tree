@@ -1,6 +1,5 @@
 module ActiveAdmin
   module Views
-
     # = Index as a Sortable List or Tree
     class IndexAsSortable < ActiveAdmin::Component
       def build(page_presenter, collection)
@@ -18,13 +17,15 @@ module ActiveAdmin
 
         # Call the block passed in. This will set the
         # title and body methods
-        instance_eval &page_presenter.block if page_presenter.block
+        instance_eval(&page_presenter.block) if page_presenter.block
 
-        add_class "index"
+        add_class 'index'
         build_list
       end
 
-      def self.index_name; "sortable"; end
+      def self.index_name
+        'sortable'
+      end
 
       def options
         active_admin_config.dsl.sortable_options
@@ -72,7 +73,7 @@ module ActiveAdmin
 
       # Adds links to View, Edit and Delete
       def actions(options = {}, &block)
-        options = { :defaults => true }.merge(options)
+        options = { defaults: true }.merge(options)
         @default_actions = options[:defaults]
         @other_actions = block
       end
@@ -90,19 +91,19 @@ module ActiveAdmin
       end
 
       def sortable_data_options
-        return {} if !sortable?
+        return {} unless sortable?
 
-        sort_url = if (( sort_url_block = options[:sort_url] ))
+        sort_url = if (sort_url_block = options[:sort_url])
                      sort_url_block.call(self)
                    else
-                     url_for(:action => :sort)
+                     url_for(action: :sort)
                    end
         {
-          "data-sortable-type"   => tree? ? "tree" : "list",
-          "data-sortable-url"    => sort_url,
-          "data-max-levels"      => options[:max_levels],
-          "data-start-collapsed" => options[:start_collapsed],
-          "data-protect-root"    => options[:protect_root],
+          'data-sortable-type' => tree? ? 'tree' : 'list',
+          'data-sortable-url' => sort_url,
+          'data-max-levels' => options[:max_levels],
+          'data-start-collapsed' => options[:start_collapsed],
+          'data-protect-root' => options[:protect_root]
         }
       end
 
@@ -115,34 +116,35 @@ module ActiveAdmin
       end
 
       def build_nested_item(item)
-        li :id => "#{@resource_name}_#{item.id}" do
-
-          div :class => "item " << cycle("odd", "even", :name => "list_class") do
+        li id: "#{@resource_name}_#{item.id}", 'data-node-id': item.id do
+          div class: 'item ' << cycle('odd', 'even', name: 'list_class') do
             if active_admin_config.batch_actions.any?
-              div :class => "cell left" do
+              div class: 'cell left' do
                 resource_selection_cell(item)
               end
             end
 
             if options[:collapsible] && item.send(options[:children_method]).any?
-              span :class => :disclose do
+              span class: :disclose do
                 span
               end
             end
 
-            h3 :class => "cell left" do
+            h3 class: 'cell left' do
               call_method_or_proc_on(item, @label)
             end
-            div :class => "cell right" do
+            div class: 'cell right' do
               build_actions(item)
             end
           end
 
-          ol do
-            item.send(options[:children_method]).order(options[:sorting_attribute]).each do |c|
-              build_nested_item(c)
+          if tree?
+            ol do
+              item.send(options[:children_method]).order(options[:sorting_attribute]).each do |c|
+                build_nested_item(c)
+              end
             end
-          end if tree?
+          end
         end
       end
 
@@ -150,20 +152,18 @@ module ActiveAdmin
         links = ''.html_safe
         if @default_actions
           if controller.action_methods.include?('show') && authorized?(ActiveAdmin::Auth::READ, resource)
-            links << link_to(I18n.t('active_admin.view'), resource_path(resource), :class => "member_link view_link")
+            links << link_to(I18n.t('active_admin.view'), resource_path(resource), class: 'member_link view_link')
           end
           if controller.action_methods.include?('edit') && authorized?(ActiveAdmin::Auth::UPDATE, resource)
-            links << link_to(I18n.t('active_admin.edit'), edit_resource_path(resource), :class => "member_link edit_link")
+            links << link_to(I18n.t('active_admin.edit'), edit_resource_path(resource), class: 'member_link edit_link')
           end
           if controller.action_methods.include?('destroy') && authorized?(ActiveAdmin::Auth::DESTROY, resource)
-            links << link_to(I18n.t('active_admin.delete'), resource_path(resource), :method => :delete, :data => {:confirm => I18n.t('active_admin.delete_confirmation')}, :class => "member_link delete_link")
+            links << link_to(I18n.t('active_admin.delete'), resource_path(resource), method: :delete, data: { confirm: I18n.t('active_admin.delete_confirmation') }, class: 'member_link delete_link')
           end
         end
         links << instance_exec(resource, &@other_actions) if @other_actions
         links
       end
-
     end
   end
 end
-

@@ -52,21 +52,33 @@ $ ->
       toleranceElement: '> div'
       isTree: true
       startCollapsed: $this.data("start-collapsed")
-      update: ->
-        $this.nestedSortable("disable")
-        $.ajax
-          url: $this.data("sortable-url")
-          type: "post"
-          data: $this.nestedSortable("serialize")
-        .always ->
-          $this.find('.item').each (index) ->
-            if index % 2
-              $(this).removeClass('odd').addClass('even')
-            else
-              $(this).removeClass('even').addClass('odd')
-          $this.nestedSortable("enable")
-          ActiveAdminSortableEvent.trigger('ajaxAlways')
-        .done ->
-          ActiveAdminSortableEvent.trigger('ajaxDone')
-        .fail ->
-          ActiveAdminSortableEvent.trigger('ajaxFail')
+
+    $this.on "sortupdate", (event, ui) =>
+      item = ui.item
+      attr_name = 'node-id'
+
+      item_id   = item.data(attr_name)
+      prev_id   = item.prev().data(attr_name)
+      next_id   = item.next().data(attr_name)
+      parent_id = item.parent().parent().data(attr_name)
+
+      $.ajax
+        url: $this.data("sortable-url")
+        type: "post"
+        data:
+          id:        item_id
+          parent_id: parent_id
+          prev_id:   prev_id
+          next_id:   next_id
+      .always ->
+        $this.find('.item').each (index) ->
+          if index % 2
+            $(this).removeClass('odd').addClass('even')
+          else
+            $(this).removeClass('even').addClass('odd')
+        $this.nestedSortable("enable")
+        ActiveAdminSortableEvent.trigger('ajaxAlways')
+      .done ->
+        ActiveAdminSortableEvent.trigger('ajaxDone')
+      .fail ->
+        ActiveAdminSortableEvent.trigger('ajaxFail')

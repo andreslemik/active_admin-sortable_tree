@@ -18,40 +18,28 @@ module ActiveAdmin
                                start_collapsed: false,
                                sortable: true
 
-        # BAD BAD BAD FIXME: don't pollute original class
         @sortable_options = options
 
-        # disable pagination
         config.paginate = false
 
         collection_action :sort, method: :post do
-          resource_name = ActiveAdmin::SortableTree::Compatibility.normalized_resource_name(active_admin_config.resource_name)
-
-          records = []
-          params[resource_name].each_pair do |resource, parent_resource|
-            parent_resource = begin
-              resource_class.find(parent_resource)
-            rescue StandardError
-              nil
-            end
-            records << [resource_class.find(resource), parent_resource]
-          end
-
           errors = []
           ActiveRecord::Base.transaction do
-            records.each_with_index do |(record, parent_record), idx|
-              prev_elm = idx.zero? ? nil : records[idx - 1]
-              next_elm = idx == records.size - 1 ? nil : records[idx + 1]
+            id = params[:id].to_i
+            parent_id = params[:parent_id].to_i
+            prev_id   = params[:prev_id].to_i
+            next_id   = params[:next_id].to_i
 
-              if record.root?
-                record.move_to_root
-              elsif prev_elm
-                record.move_to_right_of(prev_elm)
-              elsif next_elm
-                record.move_to_left_of(next_elm)
-              end
-              record.move_to_child_of(parent_record) if options[:tree] && parent_record
-              errors << { record.id => record.errors } unless record.save
+            return head_respond(:no_content) if parent_id.zero? && prev_id.zero? && next_id.zero?
+
+            record = resource_class.find(id)
+
+            if prev_id.zero? && next_id.zero?
+              record.move_to_child_of resource_class.find(parent_id)
+            elsif !prev_id.zero?
+              record.move_to_right_of resource_class.find(prev_id)
+            elsif !next_id.zero?
+              record.move_to_left_of resource_class.find(next_id)
             end
           end
           if errors.empty?
